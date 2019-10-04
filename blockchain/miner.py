@@ -1,46 +1,44 @@
 import hashlib
 import requests
-
+import json
 import sys
 
+from random import randint
 from uuid import uuid4
-
 from timeit import default_timer as timer
+from flask import Flask, jsonify, request
 
-import random
+saved_hashes = {}
 
 
 def proof_of_work(last_proof):
-    """
-    Multi-Ouroboros of Work Algorithm
-    - Find a number p' such that the last six digits of hash(p) are equal
-    to the first six digits of hash(p')
-    - IE:  last_hash: ...AE9123456, new hash 123456888...
-    - p is the previous proof, and p' is the new proof
-    - Use the same method to generate SHA-256 hashes as the examples in class
-    - Note:  We are adding the hash of the last proof to a number/nonce for the new proof
-    """
-
     start = timer()
 
     print("Searching for next proof")
-    proof = 0
-    #  TODO: Your code here
+    proof = randint(0, 110000000)
+    last_hash = hashlib.sha256(str(last_proof).encode()).hexdigest()
+    #checking dictionary for a previously stored solution
+    if last_hash[-6:] in saved_hashes.keys(): 
+        proof = saved_hashes[last_hash[-6:]]
+    else:
+        while valid_proof(last_hash, proof) == False:
+            proof += 1
+    return proof
 
     print("Proof found: " + str(proof) + " in " + str(timer() - start))
     return proof
 
 
 def valid_proof(last_hash, proof):
-    """
-    Validates the Proof:  Multi-ouroborus:  Do the last six characters of
-    the hash of the last proof match the first six characters of the proof?
 
-    IE:  last_hash: ...AE9123456, new hash 123456888...
-    """
+    guess = str(proof).encode()
 
-    # TODO: Your code here!
-    pass
+    myhash = hashlib.sha256(guess).hexdigest()
+    #saving every hash into the dictionary for future use
+    saved_hashes[myhash[:6]] = guess 
+
+    return myhash[:6] == last_hash[-6:]
+
 
 
 if __name__ == '__main__':
@@ -58,6 +56,7 @@ if __name__ == '__main__':
     print("ID is", id)
     f.close()
 
+
     if id == 'NONAME\n':
         print("ERROR: You must change your name in `my_id.txt`!")
         exit()
@@ -73,7 +72,7 @@ if __name__ == '__main__':
 
         r = requests.post(url=node + "/mine", json=post_data)
         data = r.json()
-        if data.get('message') == 'New Block Forged':
+        if data.get('message') == None:
             coins_mined += 1
             print("Total coins mined: " + str(coins_mined))
         else:
