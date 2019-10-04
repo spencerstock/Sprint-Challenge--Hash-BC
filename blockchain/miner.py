@@ -1,5 +1,6 @@
 import hashlib
 import requests
+import json
 
 import sys
 
@@ -8,6 +9,7 @@ from uuid import uuid4
 from timeit import default_timer as timer
 
 import random
+from flask import Flask, jsonify, request
 
 
 def proof_of_work(last_proof):
@@ -24,8 +26,12 @@ def proof_of_work(last_proof):
     start = timer()
 
     print("Searching for next proof")
-    proof = 0
     #  TODO: Your code here
+    proof = 2100000000
+    last_hash = hashlib.sha256(str(last_proof).encode()).hexdigest()
+    while valid_proof(last_hash, proof) == False:
+        proof -= 1
+    return proof
 
     print("Proof found: " + str(proof) + " in " + str(timer() - start))
     return proof
@@ -40,7 +46,13 @@ def valid_proof(last_hash, proof):
     """
 
     # TODO: Your code here!
-    pass
+    
+
+    guess = f"{proof}"
+
+    myhash = hashlib.sha256(guess.encode()).hexdigest()
+    return myhash[:6] == last_hash[-6:]
+
 
 
 if __name__ == '__main__':
@@ -53,10 +65,7 @@ if __name__ == '__main__':
     coins_mined = 0
 
     # Load or create ID
-    f = open("my_id.txt", "r")
-    id = f.read()
-    print("ID is", id)
-    f.close()
+    id = "SPENCEBOY"
 
     if id == 'NONAME\n':
         print("ERROR: You must change your name in `my_id.txt`!")
@@ -73,7 +82,7 @@ if __name__ == '__main__':
 
         r = requests.post(url=node + "/mine", json=post_data)
         data = r.json()
-        if data.get('message') == 'New Block Forged':
+        if data.get('message') == 'None':
             coins_mined += 1
             print("Total coins mined: " + str(coins_mined))
         else:
